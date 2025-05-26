@@ -18,12 +18,37 @@ export class BinanceService {
   }
 
 
-  private checkEnvConfig(key: string): string {
+  checkEnvConfig(key: string): string {
     const value = this.configService.get<string>(key);
     if (!value) {
       throw new Error(`This variable is requeried: ${key}`);
     }
     return value;
+  }
+
+  
+  async handleEvent(payload: any) {
+    // Aquí puedes manejar eventos específicos de Binance Pay
+    const { bizType, bizId, data } = payload;
+
+    switch (bizType) {
+      case 'PAY_ORDER':
+        console.log(`Pago recibido: ${JSON.stringify(data)}`);
+        // lógica de negocio
+        break;
+
+      default:
+        console.log(`Evento no manejado: ${bizType}`);
+    }
+  }
+
+  verifySignature(signature: string, payload: any): boolean {
+    const payloadString = JSON.stringify(payload);
+    const hmac = crypto.createHmac('sha512', this.apiSecret);
+    hmac.update(payloadString);
+    const expectedSignature = hmac.digest('hex');
+
+    return expectedSignature === signature;
   }
 
 
@@ -53,7 +78,6 @@ export class BinanceService {
 
 
   async CloseBinancePayOrder(closeOrderRequest: CloseOrder){
-    console.log(closeOrderRequest)
     const timestamp = Date.now().toString(); 
     const nonce = uuidv4().replace(/-/g, ''); //ID not repeteable
 
@@ -132,8 +156,6 @@ export class BinanceService {
       );
 
       const data = response.data;
-      console.log("Response data:", data);
-      console.log("Response status:", response.status);
       if (data.status === "SUCCESS") {
         return {
           statusCode: 201,

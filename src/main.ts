@@ -1,11 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ConfigModule
+import { ConfigModule} from '@nestjs/config';
+import * as bodyParser from 'body-parser';
 
- } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(
+    bodyParser.json({
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
+  app.enableCors({
+    origin: '*', // Reemplaza con la URL de tu frontend
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Binance api test')
