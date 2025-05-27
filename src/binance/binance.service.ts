@@ -26,7 +26,7 @@ export class BinanceService {
     return value;
   }
 
-  
+
   async handleEvent(payload: any) {
     // Aquí puedes manejar eventos específicos de Binance Pay
     const { bizType, bizId, data } = payload;
@@ -40,6 +40,36 @@ export class BinanceService {
       default:
         console.log(`Evento no manejado: ${bizType}`);
     }
+  }
+
+  async getPublicKey(certificateSn: string) {
+    const timestamp = Date.now().toString();
+    const nonce = crypto.randomBytes(16).toString('hex');
+    const payload = '';
+    const dataToSign = `${timestamp}\n${nonce}\n${payload}\n`;
+
+    const signature = crypto
+    .createHmac('sha512', this.apiSecret)
+    .update(dataToSign)
+    .digest('base64');
+
+    const response = await axios.post('https://bpay.binanceapi.com/binancepay/openapi/certificates', {}, {
+          headers: {
+            'Content-Type': 'application/json',
+            'BinancePay-Timestamp': timestamp,
+            'BinancePay-Nonce': nonce,
+            'BinancePay-Certificate-SN': certificateSn,
+            'BinancePay-Signature': signature,
+            'Authorization': `Bearer ${this.apiKey}`,
+          }
+    });
+    const cert = response.data.data.find((c: any) => c.certSerial === certificateSn);
+
+    if (!cert) {
+      throw new Error('Certificado no encontrado');
+    }
+
+    return cert.certPublic;
   }
 
   verifySignature(signature: string, payload: any): boolean {
