@@ -17,7 +17,7 @@ export class BinanceService {
     this.apiSecret = this.checkEnvConfig('BINANCE_API_SECRET');
   }
 
-
+  
   checkEnvConfig(key: string): string {
     const value = this.configService.get<string>(key);
     if (!value) {
@@ -26,61 +26,23 @@ export class BinanceService {
     return value;
   }
 
+  // timestamp: string, nonce: string, signature: string
+  async getPublicKey() {
+      const timestamp = Date.now().toString(); 
+      const nonce = uuidv4().replace(/-/g, ''); //ID not repeteable
+      const payload = {};
+      const payloadStr = JSON.stringify(payload); // esto da "{}"
+      const signature = this.signPayload(payloadStr, timestamp, nonce);
+      const header = this.assignHeader(timestamp, nonce, signature);
 
-  async handleEvent(payload: any) {
-    // Aquí puedes manejar eventos específicos de Binance Pay
-    const { bizType, bizId, data } = payload;
-
-    switch (bizType) {
-      case 'PAY_ORDER':
-        console.log(`Pago recibido: ${JSON.stringify(data)}`);
-        // lógica de negocio
-        break;
-
-      default:
-        console.log(`Evento no manejado: ${bizType}`);
-    }
-  }
-
-  async getPublicKey(certificateSn: string) {
-    const timestamp = Date.now().toString();
-    const nonce = crypto.randomBytes(16).toString('hex');
-    const payload = '';
-    const dataToSign = `${timestamp}\n${nonce}\n${payload}\n`;
-
-    const signature = crypto
-    .createHmac('sha512', this.apiSecret)
-    .update(dataToSign)
-    .digest('base64');
-
-    const response = await axios.post('https://bpay.binanceapi.com/binancepay/openapi/certificates', {}, {
-          headers: {
-            'Content-Type': 'application/json',
-            'BinancePay-Timestamp': timestamp,
-            'BinancePay-Nonce': nonce,
-            'BinancePay-Certificate-SN': certificateSn,
-            'BinancePay-Signature': signature,
-            'Authorization': `Bearer ${this.apiKey}`,
-          }
+      const response = await axios.post(`https://bpay.binanceapi.com/binancepay/openapi/certificates`,
+      payload,
+      {
+      headers: header
     });
-    const cert = response.data.data.find((c: any) => c.certSerial === certificateSn);
 
-    if (!cert) {
-      throw new Error('Certificado no encontrado');
-    }
-
-    return cert.certPublic;
+    return response.data.data[0].certPublic;
   }
-
-  verifySignature(signature: string, payload: any): boolean {
-    const payloadString = JSON.stringify(payload);
-    const hmac = crypto.createHmac('sha512', this.apiSecret);
-    hmac.update(payloadString);
-    const expectedSignature = hmac.digest('hex');
-
-    return expectedSignature === signature;
-  }
-
 
   private signPayload(payload: any, timestamp: any, nonce: string): string {
     const dataToSign = `${timestamp}\n${nonce}\n${payload}\n`;
@@ -209,4 +171,5 @@ export class BinanceService {
       };
     }
   }
+
 }
