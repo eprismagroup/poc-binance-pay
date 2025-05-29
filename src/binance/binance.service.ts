@@ -17,7 +17,7 @@ export class BinanceService {
     this.apiSecret = this.checkEnvConfig('BINANCE_API_SECRET');
   }
 
-
+  
   checkEnvConfig(key: string): string {
     const value = this.configService.get<string>(key);
     if (!value) {
@@ -26,29 +26,42 @@ export class BinanceService {
     return value;
   }
 
-  
-  async handleEvent(payload: any) {
-    // Aquí puedes manejar eventos específicos de Binance Pay
-    const { bizType, bizId, data } = payload;
 
-    switch (bizType) {
-      case 'PAY_ORDER':
-        console.log(`Pago recibido: ${JSON.stringify(data)}`);
-        // lógica de negocio
-        break;
+  async getPublicKey() {
+      const timestamp = Date.now().toString(); 
+      const nonce = uuidv4().replace(/-/g, ''); //ID not repeteable
+      const payload = {};
+      const payloadStr = JSON.stringify(payload);
+      const signature = this.signPayload(payloadStr, timestamp, nonce);
+      const header = this.assignHeader(timestamp, nonce, signature);
 
-      default:
-        console.log(`Evento no manejado: ${bizType}`);
-    }
+      const response = await axios.post(`https://bpay.binanceapi.com/binancepay/openapi/certificates`,
+      payload,
+      {
+      headers: header
+    });
+
+    return response.data.data[0].certPublic;
   }
 
-  verifySignature(signature: string, payload: any): boolean {
-    const payloadString = JSON.stringify(payload);
-    const hmac = crypto.createHmac('sha512', this.apiSecret);
-    hmac.update(payloadString);
-    const expectedSignature = hmac.digest('hex');
 
-    return expectedSignature === signature;
+  verifySignature(publicKey: string, payload: string, signature: string): boolean {
+    try {
+      const isValid = crypto.verify(
+        'RSA-SHA256',
+        Buffer.from(payload, 'utf8'),
+        {
+          key: publicKey,
+          padding: crypto.constants.RSA_PKCS1_PADDING,
+        },
+        Buffer.from(signature, 'base64')
+      );
+
+      return isValid;
+    } catch (err) {
+      console.error('❌ Error al verificar la firma:', err);
+      return false;
+    }
   }
 
 
@@ -179,4 +192,5 @@ export class BinanceService {
       };
     }
   }
+
 }
