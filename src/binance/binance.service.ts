@@ -26,12 +26,12 @@ export class BinanceService {
     return value;
   }
 
-  // timestamp: string, nonce: string, signature: string
+
   async getPublicKey() {
       const timestamp = Date.now().toString(); 
       const nonce = uuidv4().replace(/-/g, ''); //ID not repeteable
       const payload = {};
-      const payloadStr = JSON.stringify(payload); // esto da "{}"
+      const payloadStr = JSON.stringify(payload);
       const signature = this.signPayload(payloadStr, timestamp, nonce);
       const header = this.assignHeader(timestamp, nonce, signature);
 
@@ -43,6 +43,27 @@ export class BinanceService {
 
     return response.data.data[0].certPublic;
   }
+
+
+  verifySignature(publicKey: string, payload: string, signature: string): boolean {
+    try {
+      const isValid = crypto.verify(
+        'RSA-SHA256',
+        Buffer.from(payload, 'utf8'),
+        {
+          key: publicKey,
+          padding: crypto.constants.RSA_PKCS1_PADDING,
+        },
+        Buffer.from(signature, 'base64')
+      );
+
+      return isValid;
+    } catch (err) {
+      console.error('❌ Error al verificar la firma:', err);
+      return false;
+    }
+  }
+
 
   private signPayload(payload: any, timestamp: any, nonce: string): string {
     const dataToSign = `${timestamp}\n${nonce}\n${payload}\n`;

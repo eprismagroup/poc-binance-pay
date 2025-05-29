@@ -9,16 +9,12 @@ import { HttpException } from '@nestjs/common';
 
 @Controller('binance')
 export class BinanceController {
-    private apiSecret: string;
-    private apiKey: string;
     constructor(private readonly binance_service: BinanceService) {
-        this.apiSecret = this.binance_service.checkEnvConfig('BINANCE_API_KEY');
-        this.apiKey = this.binance_service.checkEnvConfig('BINANCE_API_SECRET');
     }
 
     @Post('create-order')
     async createOrder(@Body() CreateOrder: CreateOrder) {
-        console.log('asdasd')
+        console.log('Order created')
         return this.binance_service.createBinancePayOrder(CreateOrder);
     }
 
@@ -36,7 +32,6 @@ export class BinanceController {
       @Headers('Binancepay-Timestamp') timestamp: string,
       @Headers('Binancepay-Nonce') nonce: string,
       @Headers('Binancepay-Signature') signature: string,
-      @Headers('Binancepay-Certificate-SN') certificateSn: string,
       @Req() req: Request,
       @Body() body: any,
       ){
@@ -44,20 +39,18 @@ export class BinanceController {
         const payload = `${timestamp}\n${nonce}\n${rawBody}\n`;
 
         const publicKey = await this.binance_service.getPublicKey();
-        console.log(publicKey)
-        // const isValid = this.binance_service.verifySignature(publicKey, payload, signature);
+        console.log(publicKey);
+        const isValid = this.binance_service.verifySignature(publicKey, payload, signature);
 
-        // if (!isValid) {
-        // throw new HttpException('Firma inválida', HttpStatus.UNAUTHORIZED);
-        // }
+        if (!isValid) {
+            throw new HttpException('signature invalid', HttpStatus.UNAUTHORIZED);
+        }
 
-        // if (body.bizType === 'PAY' && body.bizStatus === 'PAY_SUCCESS') {
-        // const parsedData = JSON.parse(body.data);
-        // console.log('✅ Pago confirmado por Binance:', parsedData.merchantTradeNo);
-        // }
+        if (body.bizType === 'PAY' && body.bizStatus === 'PAY_SUCCESS') {
+            const parsedData = JSON.parse(body.data);
+            console.log('✅ Pay confirmed by Binance:', parsedData.merchantTradeNo);
+        }
 
         return { returnCode: 'SUCCESS' };
-
-
       }
 }
