@@ -14,7 +14,8 @@ export class BinanceController {
 
     @Post('create-order')
     async createOrder(@Body() CreateOrder: CreateOrder) {
-        console.log('Order created')
+        console.log('Order created: ', CreateOrder)
+        console.log('\n\n')
         return this.binance_service.createBinancePayOrder(CreateOrder);
     }
 
