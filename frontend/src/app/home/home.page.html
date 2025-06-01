@@ -7,14 +7,31 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  <ion-row>
+    @for(item of motorCycles; track item.id){
+      <ion-col sizeLg="3" sizeMd="4" sizeSm="6" sizeXl="3" sizeXs="6">
+        <ion-card>
+          
+          <ion-thumbnail>
+            <ion-img [src]="item.image"></ion-img>
+          </ion-thumbnail>
+          
+          <ion-label>
+            <ion-text color="dark"><strong>{{item.name}}</strong></ion-text>
+            <p>
+              <ion-text color="dark">
+                <strong>{{item.price}}</strong>
+              </ion-text>
+              
+              <ion-text class="rating" color="dark">
+                {{item.rating}}
+                <ion-icon name="star"color="warning"></ion-icon>
+              </ion-text>
+            </p>
+          </ion-label>
+        </ion-card>
+      </ion-col>
+    }
+    <ion-icon></ion-icon>
+  </ion-row>
 </ion-content>
