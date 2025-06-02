@@ -54,9 +54,9 @@ export class BinanceController {
             console.log('✅ Pay confirmed by Binance:', parsedData.merchantTradeNo);
         }
 
-        if (body.bizType === 'PAY' && body.bizStatus === 'PAY_CLOSE') {
+        if (body.bizType === 'PAY' && body.bizStatus === 'PAY_CLOSED') {
             const parsedData = JSON.parse(body.data);
-            console.log('✅ Pay failed confirmed by Binance:', parsedData.merchantTradeNo);
+            console.log('✅ Pay CLOSED confirmed by Binance:', parsedData.merchantTradeNo);
         }
 
         return { returnCode: 'SUCCESS' };
