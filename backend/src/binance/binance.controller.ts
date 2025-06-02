@@ -41,6 +41,8 @@ export class BinanceController {
 
         const publicKey = await this.binance_service.getPublicKey();
         console.log(publicKey);
+        console.log(body.bizType)
+        console.log(body.bizStatus)
         const isValid = this.binance_service.verifySignature(publicKey, payload, signature);
 
         if (!isValid) {
